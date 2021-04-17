@@ -69,7 +69,7 @@
 
 // These values represent uint16 words.
 #define DHCP_THREAD_STACKSIZE 256
-#define TEMP_THREAD_STACKSIZE 512
+#define TEMP_THREAD_STACKSIZE 1024
 
 /*! @brief Priority of the thread which prints DHCP info. */
 #define DHCP_THREAD_PRIO DEFAULT_THREAD_PRIO
@@ -233,11 +233,7 @@ static void dhcp_thread(void *arg) {
     vTaskDelete(NULL);
 }
 
-/*!
- * @brief Main function.
- */
-int main(void)
-{
+int main(void) {
     static struct netif netif;
 #if defined(FSL_FEATURE_SOC_LPC_ENET_COUNT) && (FSL_FEATURE_SOC_LPC_ENET_COUNT > 0)
     static mem_range_t non_dma_memory[] = NON_DMA_MEMORY_ARRAY;
