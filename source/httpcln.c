@@ -1,4 +1,5 @@
 #include "httpcln.h"
+#include "common.h"
 
 #include "lwip/netdb.h"
 
@@ -12,13 +13,6 @@ typedef uint8_t httpcln_method_t;
 #define HTTPCLN_WAIT_RESULT_DATA_AVAILABLE			1
 #define HTTPCLN_WAIT_RESULT_ERROR					-1
 typedef int8_t httpcln_wait_result_t;
-
-#ifndef min
-#define min(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-#ifndef max
-#define max(a,b) (((a) > (b)) ? (a) : (b))
-#endif
 
 // Parses *url and places all data in the other output pointers.
 static flag_t httpcln_parse_url(char *url, char *server_host, uint8_t server_host_max_size, uint16_t *port,

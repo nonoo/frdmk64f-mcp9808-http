@@ -35,6 +35,7 @@
 #include "config.h"
 #include "httpcln.h"
 #include "float.h"
+#include "common.h"
 
 /*******************************************************************************
  * Definitions
@@ -152,19 +153,25 @@ static void temp_thread(void *arg) {
        	case HTTPCLN_RESULT_OK:
             LED_RED_OFF();
        		PRINTF("temp: send ok\n");
+       		vTaskDelay(1000 / portTICK_PERIOD_MS);
+            LED_GREEN_OFF();
+            for (i = TEMP_READ_INTERVAL_MS-1000; i > 0; i -= 10000) {
+            	LED_GREEN_ON();
+            	vTaskDelay(100 / portTICK_PERIOD_MS);
+            	LED_GREEN_OFF();
+            	vTaskDelay(min(i, 9900) / portTICK_PERIOD_MS);
+            }
        		break;
        	default:
             LED_GREEN_OFF();
        		PRINTF("temp: http err, res %d\n", http_res);
+            for (i = TEMP_READ_INTERVAL_MS; i > 0; i -= 1000) {
+            	vTaskDelay(1000 / portTICK_PERIOD_MS);
+            	LED_RED_TOGGLE();
+            }
+        	LED_RED_OFF();
        		break;
        	}
-
-       	vTaskDelay(LED_RESULT_DISPLAY_LENGTH_MS / portTICK_PERIOD_MS);
-        LED_RED_OFF();
-        LED_GREEN_OFF();
-
-    	//vTaskDelay(300000 / portTICK_PERIOD_MS); // 5 mins.
-       	vTaskDelay((TEMP_READ_INTERVAL_MS-LED_RESULT_DISPLAY_LENGTH_MS) / portTICK_PERIOD_MS);
 	}
 
     vTaskDelete(NULL);
