@@ -27,6 +27,7 @@
 #include "clock_config.h"
 #include "board.h"
 #include "fsl_phy.h"
+#include "fsl_i2c.h"
 
 #include "fsl_device_registers.h"
 #include "fsl_phyksz8081.h"
@@ -62,6 +63,12 @@
 #define BOARD_SW_IRQ         BOARD_SW3_IRQ
 #define BOARD_SW_IRQ_HANDLER BOARD_SW3_IRQ_HANDLER
 
+#define I2C_MASTER_BASEADDR  I2C0
+#define I2C_MASTER_CLK_SRC   I2C0_CLK_SRC
+#define I2C_MASTER_CLK_FREQ  CLOCK_GetFreq(I2C0_CLK_SRC)
+#define I2C_MASTER_SLAVE_ADR 0x1d
+
+#define TEMP_INVALID -127
 
 #ifndef EXAMPLE_NETIF_INIT_FN
 /*! @brief Network interface initialization function. */
@@ -99,9 +106,58 @@ static struct {
  * Code
  ******************************************************************************/
 
+static int temp_reg_read(int regaddr) {
+    i2c_master_transfer_t i2c_master_transfer;
+    uint8_t rxbuf[2];
+
+    memset(&i2c_master_transfer, 0, sizeof(i2c_master_transfer));
+    i2c_master_transfer.slaveAddress   = I2C_MASTER_SLAVE_ADR;
+    i2c_master_transfer.direction      = kI2C_Read;
+    i2c_master_transfer.subaddress     = regaddr;
+    i2c_master_transfer.subaddressSize = 1;
+    i2c_master_transfer.data           = rxbuf;
+    i2c_master_transfer.dataSize       = 1;
+    i2c_master_transfer.flags          = kI2C_TransferDefaultFlag;
+
+    I2C_MasterTransferBlocking(I2C_MASTER_BASEADDR, &i2c_master_transfer);
+
+    return rxbuf[0];
+}
+
 static double temp_read(void) {
-	// TODO
+	int vendor_id = temp_reg_read(0x0d);
+
+	if (vendor_id != 0xc7) {
+		PRINTF("temp-read: invalid vendor id %d\n", vendor_id);
+		return TEMP_INVALID;
+	}
+
 	return 12.34;
+}
+
+static void temp_handle_success(void) {
+	int i;
+
+	LED_RED_OFF();
+	vTaskDelay(1000 / portTICK_PERIOD_MS);
+    LED_GREEN_OFF();
+    for (i = TEMP_READ_INTERVAL_MS-1000; i > 0; i -= 10000) {
+    	LED_GREEN_ON();
+    	vTaskDelay(100 / portTICK_PERIOD_MS);
+    	LED_GREEN_OFF();
+    	vTaskDelay(min(i, 9900) / portTICK_PERIOD_MS);
+    }
+}
+
+static void temp_handle_error(void) {
+	int i;
+
+	LED_GREEN_OFF();
+    for (i = TEMP_READ_INTERVAL_MS; i > 0; i -= 1000) {
+    	vTaskDelay(1000 / portTICK_PERIOD_MS);
+    	LED_RED_TOGGLE();
+    }
+	LED_RED_OFF();
 }
 
 static void temp_thread(void *arg) {
@@ -114,9 +170,14 @@ static void temp_thread(void *arg) {
 	int f_int;
 	char s_frac[5];
 	int i;
+    i2c_master_config_t i2c_master_config;
 
 	LED_RED_INIT(1);
 	LED_GREEN_INIT(1);
+
+    I2C_MasterGetDefaultConfig(&i2c_master_config);
+    i2c_master_config.baudRate_Bps = 100000;
+    I2C_MasterInit(I2C_MASTER_BASEADDR, &i2c_master_config, I2C_MASTER_CLK_FREQ);
 
 	while (1) {
         xSemaphoreTake(app_state.mutex, portMAX_DELAY);
@@ -135,6 +196,11 @@ static void temp_thread(void *arg) {
 
         temp = temp_read();
 
+        if (temp == TEMP_INVALID) {
+        	temp_handle_error();
+        	continue;
+        }
+
         float_explode(temp, &f_int, s_frac, sizeof(s_frac));
         if (temp < 0)
         	i = snprintf(url, sizeof(url), URL_BASE "-%u.%s", abs(f_int), s_frac);
@@ -151,25 +217,12 @@ static void temp_thread(void *arg) {
 
         switch (http_res) {
        	case HTTPCLN_RESULT_OK:
-            LED_RED_OFF();
        		PRINTF("temp: send ok\n");
-       		vTaskDelay(1000 / portTICK_PERIOD_MS);
-            LED_GREEN_OFF();
-            for (i = TEMP_READ_INTERVAL_MS-1000; i > 0; i -= 10000) {
-            	LED_GREEN_ON();
-            	vTaskDelay(100 / portTICK_PERIOD_MS);
-            	LED_GREEN_OFF();
-            	vTaskDelay(min(i, 9900) / portTICK_PERIOD_MS);
-            }
+       		temp_handle_success();
        		break;
        	default:
-            LED_GREEN_OFF();
        		PRINTF("temp: http err, res %d\n", http_res);
-            for (i = TEMP_READ_INTERVAL_MS; i > 0; i -= 1000) {
-            	vTaskDelay(1000 / portTICK_PERIOD_MS);
-            	LED_RED_TOGGLE();
-            }
-        	LED_RED_OFF();
+       		temp_handle_error();
        		break;
        	}
 	}
