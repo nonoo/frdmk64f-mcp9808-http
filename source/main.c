@@ -161,11 +161,11 @@ static void temp_handle_success(void) {
     }
 }
 
-static void temp_handle_error(void) {
+static void temp_handle_error(int delay_ms) {
 	int i;
 
 	LED_GREEN_OFF();
-    for (i = TEMP_READ_INTERVAL_MS; i > 0; i -= 1000) {
+    for (i = delay_ms; i > 0; i -= 1000) {
     	vTaskDelay(1000 / portTICK_PERIOD_MS);
     	LED_RED_TOGGLE();
     }
@@ -209,7 +209,7 @@ static void temp_thread(void *arg) {
         temp = temp_read();
 
         if (temp == TEMP_INVALID) {
-        	temp_handle_error();
+        	temp_handle_error(TEMP_READ_INTERVAL_MS);
         	continue;
         }
 
@@ -241,7 +241,7 @@ static void temp_thread(void *arg) {
        		break;
        	default:
        		PRINTF("temp: http err, res %d\n", http_res);
-       		temp_handle_error();
+       		temp_handle_error(HTTP_RETRY_INTERVAL_MS);
        		break;
        	}
 	}
