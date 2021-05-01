@@ -254,6 +254,9 @@ static void dhcp_thread(void *arg) {
     struct dhcp *dhcp;
     bool last_eth_link_state;
     bool is_eth_link_up;
+    char ip_str[18];
+    char netmask_str[18];
+    char gw_str[18];
 
     while (1) {
     	// https://community.nxp.com/t5/i-MX-RT/Best-way-to-check-Ethernet-link/m-p/925844#M3714
@@ -299,8 +302,11 @@ static void dhcp_thread(void *arg) {
             PRINTF("\n");
 
             if (app_state.dhcp_last_state == DHCP_STATE_BOUND) {
-                PRINTF("dhcp: bound to addr %s mask %s gw %s\n", ipaddr_ntoa(&netif->ip_addr),
-                		ipaddr_ntoa(&netif->netmask), ipaddr_ntoa(&netif->gw));
+            	strncpy(ip_str, ipaddr_ntoa(&netif->ip_addr), sizeof(ip_str));
+            	strncpy(netmask_str, ipaddr_ntoa(&netif->netmask), sizeof(netmask_str));
+            	strncpy(gw_str, ipaddr_ntoa(&netif->gw), sizeof(gw_str));
+
+            	PRINTF("dhcp: bound to addr %s mask %s gw %s\n", ip_str, netmask_str, gw_str);
             }
         }
 
