@@ -221,9 +221,10 @@ static void temp_thread(void *arg) {
 
         temp_str[sizeof(temp_str)-1] = 0;
 
-        // Trimming zeroes from the end.
-        while (temp_str[--i] == '0' && i > 0)
-        	temp_str[i] = 0;
+        i--;
+        // Trimming zeroes and dots from the end.
+        while ((temp_str[i] == '0' || temp_str[i] == '.') && i > 0)
+        	temp_str[i--] = 0;
 
         PRINTF("temp: %s\n", temp_str);
 
