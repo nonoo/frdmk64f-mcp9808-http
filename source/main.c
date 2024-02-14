@@ -139,10 +139,10 @@ static double temp_read(void) {
 	temp_reg_val &= 0x1fff;
 
 	if (temp_reg_val & 0x1000) {
-		temp_reg_val &= 0x0f00;
-		celsius = 256 - (((double)(temp_reg_val >> 8))*16 + ((double)(temp_reg_val & 0xff))/16);
-	} else
-		celsius = ((double)(temp_reg_val >> 8))*16 + ((double)(temp_reg_val & 0xff))/16;
+        double upper_byte = (temp_reg_val >> 8) & 0x0f;
+        celsius = -1 * (256 - (upper_byte*16 + (temp_reg_val & 0xff)/16.0));
+    } else
+        celsius = ((double)(temp_reg_val >> 8))*16 + ((double)(temp_reg_val & 0xff))/16;
 
 	return celsius;
 }
