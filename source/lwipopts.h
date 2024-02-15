@@ -194,6 +194,8 @@ void sys_mark_tcpip_thread(void);
 #define LWIP_DHCP 1
 #endif
 
+#define LWIP_NETIF_HOSTNAME 1
+
 /* ---------- UDP options ---------- */
 #ifndef LWIP_UDP
 #define LWIP_UDP 1
@@ -276,6 +278,10 @@ Some MCU allow computing and verifying the IP, UDP, TCP and ICMP checksums by ha
 */
 
 #define LWIP_DEBUG
+
+//#define IP_DEBUG                        LWIP_DBG_ON
+//#define DHCP_DEBUG                      LWIP_DBG_ON
+//#define UDP_DEBUG                       LWIP_DBG_ON
 
 #ifdef LWIP_DEBUG
 #define U8_F  "c"

@@ -355,6 +355,7 @@ int main(void) {
                        tcpip_input);
     netifapi_netif_set_default(&netif);
     netifapi_netif_set_up(&netif);
+    netif_set_hostname(&netif, HOSTNAME);
 
     app_state.mutex = xSemaphoreCreateMutex();
 

@@ -10,6 +10,7 @@
 
 #define URL_BASE "http://some.url.beer:5555/?temp="
 
+#define HOSTNAME "temp-k64f"
 #define MAC_ADDR { 0x02, 0x12, 0x13, 0x10, 0x15, 0x11 }
 
 #endif
