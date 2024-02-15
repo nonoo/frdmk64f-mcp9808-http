@@ -25,7 +25,7 @@
 
 #include "pin_mux.h"
 #include "clock_config.h"
-#include "board.h"
+#include <board.h>
 #include "fsl_phy.h"
 #include "fsl_i2c.h"
 
@@ -37,6 +37,7 @@
 #include "httpcln.h"
 #include "float.h"
 #include "common.h"
+#include "board-rand.h"
 
 /*******************************************************************************
  * Definitions
@@ -339,6 +340,8 @@ int main(void) {
     BOARD_InitDebugConsole();
     /* Disable SYSMPU. */
     base->CESR &= ~SYSMPU_CESR_VLD_MASK;
+
+    board_rand_init();
 
     mdioHandle.resource.csrClock_Hz = EXAMPLE_CLOCK_FREQ;
 
