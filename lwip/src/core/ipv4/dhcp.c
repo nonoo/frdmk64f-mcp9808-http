@@ -224,6 +224,7 @@ static u16_t dhcp_option_long(u16_t options_out_len, u8_t *options, u32_t value)
 #if LWIP_NETIF_HOSTNAME
 static u16_t dhcp_option_hostname(u16_t options_out_len, u8_t *options, struct netif *netif);
 #endif /* LWIP_NETIF_HOSTNAME */
+static u16_t dhcp_option_client_id(struct netif *netif, struct dhcp_msg *msg_out, u16_t options_out_len);
 /* always add the DHCP options trailer to end and pad */
 static void dhcp_option_trailer(u16_t options_out_len, u8_t *options, struct pbuf *p_out);
 
@@ -994,6 +995,11 @@ dhcp_discover(struct netif *netif)
     options_out_len = dhcp_option(options_out_len, msg_out->options, DHCP_OPTION_MAX_MSG_SIZE, DHCP_OPTION_MAX_MSG_SIZE_LEN);
     options_out_len = dhcp_option_short(options_out_len, msg_out->options, DHCP_MAX_MSG_LEN(netif));
 
+#if LWIP_NETIF_HOSTNAME
+    options_out_len = dhcp_option_hostname(options_out_len, msg_out->options, netif);
+#endif /* LWIP_NETIF_HOSTNAME */
+    options_out_len = dhcp_option_client_id(netif, msg_out, options_out_len);
+
     options_out_len = dhcp_option(options_out_len, msg_out->options, DHCP_OPTION_PARAMETER_REQUEST_LIST, LWIP_ARRAYSIZE(dhcp_discover_request_options));
     for (i = 0; i < LWIP_ARRAYSIZE(dhcp_discover_request_options); i++) {
       options_out_len = dhcp_option_byte(options_out_len, msg_out->options, dhcp_discover_request_options[i]);
@@ -1467,6 +1473,18 @@ dhcp_option_hostname(u16_t options_out_len, u8_t *options, struct netif *netif)
   return options_out_len;
 }
 #endif /* LWIP_NETIF_HOSTNAME */
+
+static u16_t
+dhcp_option_client_id(struct netif *netif, struct dhcp_msg *msg_out, u16_t options_out_len)
+{
+  size_t i;
+  options_out_len = dhcp_option(options_out_len, msg_out->options, DHCP_OPTION_CLIENT_ID, 7);
+  options_out_len = dhcp_option_byte(options_out_len, msg_out->options, 1);
+  for (i = 0; i < netif->hwaddr_len; i++) {
+    options_out_len = dhcp_option_byte(options_out_len, msg_out->options, netif->hwaddr[i]);
+  }
+  return options_out_len;
+}
 
 /**
  * Extract the DHCP message and the DHCP options.
