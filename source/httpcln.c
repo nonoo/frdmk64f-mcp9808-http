@@ -2,6 +2,7 @@
 #include "common.h"
 
 #include "lwip/netdb.h"
+#include "lwip/sockets.h"
 
 #include <stdio.h>
 
